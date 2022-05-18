@@ -104,9 +104,6 @@
 # START OF  CONFIGURE
 - block:
 
-  # TODO: add check IP address is unique accros wireguard inventory group
-  # TODO: add check server role is unique accros wireguard inventory group
-
   - name: creating empty backup directory
     file:
       path: "{{ wg_etc }}"
