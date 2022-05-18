@@ -98,7 +98,7 @@ iperf -s -f m -i 1
 
 Client
 ```bash
-iperf -c 192.168.1.67 -t 30
+iperf -c 10.10.10.1 -t 30
 ```
 
 ### Unencrypted preformance clent <-> server
