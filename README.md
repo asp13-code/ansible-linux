@@ -101,10 +101,10 @@ Client
 iperf -c 10.10.10.1 -t 30
 ```
 
-### Unencrypted preformance clent <-> server
+### Unencrypted performance clent <-> server
 Client <-> Server: 14 Gbits/sec
 
-### Wireguard encrypted preformance
+### Wireguard encrypted performance
 Clent <-> Server:            2 Gbits/sec
 
 Client <-> Client:       900 Mbits/sec
