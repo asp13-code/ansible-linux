@@ -1,0 +1,262 @@
+---
+# This role installs wireguard, configures, enables, starts
+# wireguard service if input and inventory variables are set
+#
+# Input variables:
+#     zeroize:     [true|false] to delete wireguard config and keys files.   Optional
+#     wgconfigure: [true|false] to generate keys and config files.           Optional
+#     wgenable:    [true|false] to enable wg service at boot time.           Optional
+#     wgstart:     [true|false] to start wg service after configuration.     Optional
+#
+# Inventory host variables:
+#     wgrole:       [server|client].                                         Optional
+#     wgip:         [ip add] internal vpn ip address.                        Optional
+#     wgsrvip:      [ip add] external server ip address (ip to connect to).  Optional
+#     wgsrvport:    [ip add] external server ip address (ip to connect to).  Optional
+
+
+# START OF  SANITY CHECKS
+- block:
+
+  - name: Cheking VPN IP addresses format
+    assert:
+      that:
+        - wgip | length == wgip | ipaddr | length
+      fail_msg: "IP address format is invalid"
+      quiet: true
+
+  - name: failing if errors met in previous tasks
+    fail: 
+      msg: "There was an error during execution of previous tasks"
+    run_once: true
+    when: ( ansible_play_hosts | length ) != ( ansible_play_hosts_all | length )
+
+  - name: creating a client list
+    set_fact:
+      wgclients: "{{ ansible_play_hosts_all|map('extract', hostvars, 'wgip')|list }}"
+    delegate_to: localhost
+    delegate_facts: true
+    connection: local
+    run_once: true
+
+  - name: detecting dublicate VPN IPs
+    fail: 
+      msg: "Duplicate IPs has been detected"
+    run_once: true
+    when: ( hostvars['localhost'].wgclients | length ) != ( hostvars['localhost'].wgclients | unique | length )
+
+  - name: adding all hosts with server role to the fail group
+    group_by:
+      key: wgserver_duplicated
+    when: wgrole == "server"
+
+  - name: failing when there is more then one wireguard server requested
+    fail:
+      msg: "More then one wireguard server found in inventory: {{ hostvars['wg-web01'].groups.wgserver_duplicated | join(', ') }}"
+    run_once: true
+    when: hostvars['wg-web01'].groups.wgserver_duplicated | length > 1
+
+  when: wgrole is defined and wgip is defined 
+# END OF  SANITY CHECKS
+
+
+- name: setting wireguard etc dir
+  set_fact:
+    wg_etc: "/etc/wireguard"
+
+- name: setting wireguard file structure
+  set_fact:
+    wg_privkey_file: "{{ wg_etc }}/private.key"
+    wg_pubkey_file: "{{ wg_etc }}/public.key"
+    wg_conf: "{{ wg_etc }}/wg0.conf"
+    wg_bin: "/usr/bin/wg"
+
+
+# START OF  ZEROIZE
+- block:
+
+  - name: deleting wireguard configuration and keys file
+    file:
+      path: "{{ item }}"
+      state: absent 
+    with_items:
+      - "{{ wg_conf }}"
+      - "{{ wg_pubkey_file }}"
+      - "{{ wg_privkey_file }}"
+
+  when: zeroize is defined and zeroize == true
+# END OF  ZEROIZE
+
+
+- name: Installing wireguard
+  apt:
+    name: "{{ role_item }}"
+    state: present
+  loop_control:
+    loop_var: role_item
+  with_items:
+    - "wireguard"
+    - "wireguard-tools"
+    - "resolvconf"
+    # - "wireguard-dkms"
+
+
+# START OF  CONFIGURE
+- block:
+
+  # TODO: add check IP address is unique accros wireguard inventory group
+  # TODO: add check server role is unique accros wireguard inventory group
+
+  - name: creating empty backup directory
+    file:
+      path: "{{ wg_etc }}"
+      state: directory
+      owner: root
+      group: root
+      mode: '0700'
+
+  - name: creating key and conf files if don't exist
+    file:
+      path: "{{ role_item }}"
+      state: touch
+      owner: root
+      group: root
+      mode: '0600'
+      modification_time: preserve
+      access_time: preserve
+    loop_control:
+      loop_var: role_item
+    with_items:
+      - "{{ wg_privkey_file }}"
+      - "{{ wg_pubkey_file }}"
+      - "{{ wg_conf }}"
+
+  - name: checking private key file attributes
+    stat:
+      path: "{{ wg_privkey_file }}"
+    register: wg_privkey_file_atts
+
+  - name: checking public key file attributes
+    stat:
+      path: "{{ wg_pubkey_file }}"
+    register: wg_pubkey_file_atts
+
+  - name: generating wireguard keys if files are empty
+    shell: "{{ wg_bin }} genkey | tee {{ wg_privkey_file }} | wg pubkey > {{ wg_pubkey_file }}"
+    when: wg_privkey_file_atts.stat.size <= 1 or wg_pubkey_file_atts.stat.size <= 1
+
+  - name: reading private key file
+    slurp:
+      src: "{{ wg_privkey_file }}"
+    become: true
+    register: wg_privkey_file_base64
+
+  - name: reading public key file
+    slurp:
+      src: "{{ wg_pubkey_file }}"
+    become: true
+    register: wg_pubkey_file_base64
+  
+  - name: setting private key var
+    set_fact:
+      wg_privkey: "{{ wg_privkey_file_base64.content | b64decode | trim }}"
+
+  - name: setting public key var
+    set_fact:
+      wg_pubkey: "{{ wg_pubkey_file_base64.content | b64decode | trim }}"
+
+  - name: setting server parameters for common use
+    set_fact:
+      wgsrvip: "{{ hostvars[inventory_hostname].wgsrvip }}"
+      wgpubkey: "{{ hostvars[inventory_hostname].wg_pubkey }}"
+      wgsrvport: "{{ hostvars[inventory_hostname].wgsrvport }}"
+      wgdnsip: "{{ hostvars[inventory_hostname].wgdnsip }}"
+      wgkeepalive: "{{ hostvars[inventory_hostname].wgkeepalive }}"
+      wgroute: "{{ hostvars[inventory_hostname].wgroute }}"
+    delegate_to: localhost
+    delegate_facts: true
+    connection: local
+    when: wgrole == "server"
+
+  - name: enabling routing at server
+    sysctl:
+      name: net.ipv4.ip_forward
+      value: '1'
+      sysctl_set: yes
+      state: present
+      reload: yes
+
+  - name: writing server config interface block
+    blockinfile:
+      backup: no
+      path: "{{ wg_conf }}"
+      marker: "# --{mark}-- #"
+      marker_begin: "- local config start -"
+      marker_end: "- local config end -"
+      block: |
+            [Interface]
+            Address = {{ wgip }}/24
+            PrivateKey = {{ wg_privkey }}
+            ListenPort = {{ wgsrvport }}
+    when: wgrole == "server"
+
+  - name: writing server config peers block
+    blockinfile:
+      backup: no
+      path: "{{ wg_conf }}"
+      marker: "# --{mark}-- #"
+      marker_begin: "- remote {{ wgip }} config start -"
+      marker_end: "- remote {{ wgip }} config end -"
+      block: |
+            [Peer]
+            PublicKey = {{ wg_pubkey }}
+            AllowedIPs = {{ wgip }}
+    delegate_to: wg-web01
+    when: wgrole != "server"
+
+  - name: writing client config interface block
+    blockinfile:
+      backup: no
+      path: "{{ wg_conf }}"
+      marker: "# --{mark}-- #"
+      marker_begin: "- local config start -"
+      marker_end: "- local config end -"
+      block: |
+            [Interface]
+            Address = {{ wgip }}/32
+            PrivateKey = {{ wg_privkey }}
+            DNS = {{ hostvars['localhost'].wgdnsip }}
+    when: wgrole != "server"
+
+  - name: writing client config peer block
+    blockinfile:
+      backup: no
+      path: "{{ wg_conf }}"
+      marker: "# --{mark}-- #"
+      marker_begin: "- remote config start -"
+      marker_end: "- remote config end -"
+      block: |
+            [Peer]
+            PublicKey = {{ hostvars['localhost'].wgpubkey }}
+            Endpoint = {{ hostvars['localhost'].wgsrvip + ':' +  hostvars['localhost'].wgsrvport }}
+            AllowedIPs = {{ hostvars['localhost'].wgroute }}
+            PersistentKeepalive = {{ hostvars['localhost'].wgkeepalive }}
+    when: wgrole != "server"
+
+  when: wgrole is defined and wgip is defined and wgconfigure is defined and wgconfigure == true
+# END OF  CONFIGURE
+
+
+- name: enabling wireguard service
+  systemd:
+    name: wg-quick@wg0
+    enabled: yes
+    masked: no
+  when: wgrole is defined and wgip is defined and wgenable is defined and wgenable == true
+
+
+- name: starting/restarting wireguard service
+  systemd:
+    name: wg-quick@wg0
+    state: restarted
+  when: wgrole is defined and wgip is defined and wgstart is defined and wgstart == true
