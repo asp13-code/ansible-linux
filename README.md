@@ -29,9 +29,9 @@ wg-client05 wgrole="client" wgip="10.10.10.5"
 ### Variables description
 `wgrole` could be `server` or `client` where server role specified for one host only
 
-`wgip` is internal IP of VPN overlay network of the host
+`wgip` is host internal IP in VPN overlay network
 
-`wgsrvip` considered as external IP of a server aka 'IP to connect to'. Could be the same as specified in ansible inventory general_linux_group or any other including internet/public IP.
+`wgsrvip` considered as external IP of a server aka 'IP to connect to'. Could be the same as specified in ansible inventory linux group or any other including internet/public IP.
 
 `wgsrvport` server port to connect to. 51820 is default wireguard value.
 
@@ -45,7 +45,7 @@ wg-client05 wgrole="client" wgip="10.10.10.5"
 ```bash
 ansible-playbook playbooks/wireguard.yml
 ```
-Role should be called from a playbook using varios switches (turning on and off functionality)
+Role could be called from a playbook using varios switches (turning on and off functionality)
 
 ### Example of a playbook
 ```yaml
