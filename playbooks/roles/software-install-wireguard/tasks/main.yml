@@ -3,7 +3,7 @@
 # wireguard service if input and inventory variables are set
 #
 # Input variables:
-#     zeroize:     [true|false] to delete wireguard config and keys files.   Optional
+#     wgzeroize:     [true|false] to delete wireguard config and keys files.   Optional
 #     wgconfigure: [true|false] to generate keys and config files.           Optional
 #     wgenable:    [true|false] to enable wg service at boot time.           Optional
 #     wgstart:     [true|false] to start wg service after configuration.     Optional
@@ -84,7 +84,7 @@
       - "{{ wg_pubkey_file }}"
       - "{{ wg_privkey_file }}"
 
-  when: zeroize is defined and zeroize == true
+  when: wgzeroize is defined and wgzeroize == true
 # END OF  ZEROIZE
 
 

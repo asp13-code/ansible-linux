@@ -60,7 +60,7 @@ Role could be called from a playbook using varios switches (turning on and off f
     include_role:
       name: software-install-wireguard
     vars:
-      zeroize: false
+      wgzeroize: false
       wgconfigure: true
       wgenable: true
       wgstart: true
@@ -69,7 +69,7 @@ Role could be called from a playbook using varios switches (turning on and off f
 ### Variables description
 There are various switches that could be used to control role behavior
 
-`zeroize` will deleted public and private keys, wg.conf file. Use wisely to configure wireguard from the scratch. Will be executed before configuration code
+`wgzeroize` will deleted public and private keys, wg.conf file. Use wisely to configure wireguard from the scratch. Will be executed before configuration code
 
 `wgconfigure` main code that generates wireguard keys (if needed) and wg.conf content
 
