@@ -19,11 +19,11 @@ wg-client05 ansible_host=192.0.2.15
 
 
 [wireguard]
-wg-srv01 wgrole="server" wgip="10.100.0.1" wgsrvip="192.168.1.11" wgsrvport="51820" wgdnsip="8.8.8.8" wgkeepalive="30" wgroute="10.100.0.0/20"
-wg-client02 wgrole="client" wgip="10.100.0.2"
-wg-client03 wgrole="client" wgip="10.100.0.3"
-wg-client04 wgrole="client" wgip="10.100.0.4"
-wg-client05 wgrole="client" wgip="10.100.0.5"
+wg-srv01 wgrole="server" wgip="10.10.10.1" wgsrvip="192.168.1.11" wgsrvport="51820" wgdnsip="8.8.8.8" wgkeepalive="30" wgroute="10.10.10.0/24"
+wg-client02 wgrole="client" wgip="10.10.10.2"
+wg-client03 wgrole="client" wgip="10.10.10.3"
+wg-client04 wgrole="client" wgip="10.10.10.4"
+wg-client05 wgrole="client" wgip="10.10.10.5"
 ```
 
 ### Variables description
