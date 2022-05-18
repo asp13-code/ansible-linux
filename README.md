@@ -77,7 +77,7 @@ There are various switches that could be used to control role behavior
 
 `wgstart` whether to start/restart wireguard service
 
-If all are false or absent role just installs wireguard package.
+If all variables are false or absent role just installs wireguard package.
 
 ### Managing wireguard installation
 Additionally, you can run parent wireguard playbook with tags to manage wireguard installation
@@ -98,21 +98,16 @@ iperf -s -f m -i 1
 
 Client
 ```bash
-iperf -c 192.168.1.67 -d -t 30
+iperf -c 192.168.1.67 -t 30
 ```
 
 ### Unencrypted preformance clent <-> server
 Client <-> Server: 14 Gbits/sec
 
 ### Wireguard encrypted preformance
-Clent -> Server:            1 Gbits/sec
+Clent <-> Server:            2 Gbits/sec
 
-Server -> Client:           2 Gbits/sec
-
-Client03 -> Client04:       900 Mbits/sec
-
-Client04 -> Client03:       450 Mbits/sec
-
+Client <-> Client:       900 Mbits/sec
 
 ## Network and firewall considerations
 
