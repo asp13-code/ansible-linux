@@ -1,0 +1,50 @@
+---
+# Playbook installs and configures wireguard for 'wireguard' inventory
+# group members according to roles (server/client) and assign IPs if defined
+
+- name: Managing Wireguard
+  hosts: wireguard
+  gather_facts: false
+  become: true
+  tasks:
+
+  - name: installing, configuring, enabling, starting wireguard by calling a role
+    include_role:
+      name: software-install-wireguard
+    vars:
+      zeroize: false
+      wgconfigure: true
+      wgenable: true
+      wgstart: true
+
+
+  - name: enabling wireguard service if called with 'enable' tag
+    systemd:
+      name: wg-quick@wg0
+      enabled: yes
+      masked: no
+    tags: never, enable
+
+  - name: starting wireguard service if called with 'start' tag
+    systemd:
+      name: wg-quick@wg0
+      state: started
+    tags: never, start
+
+  - name: restarting wireguard service
+    systemd:
+      name: wg-quick@wg0
+      state: restarted
+    tags: never, restart
+
+  - name: stopping wireguard service if called with 'stop' tag
+    systemd:
+      name: wg-quick@wg0
+      state: stopped
+    tags: never, stop
+
+  - name: disabling wireguard service at boot time if called with 'disable' tag
+    systemd:
+      name: wg-quick@wg0
+      enabled: no
+    tags: never, disable
