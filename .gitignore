@@ -1,0 +1,11 @@
+dev*
+test*
+tt*
+deb*
+*.log
+*.swp
+private_*
+.ansible_vault_pass
+&STDERR
+local_*
+nogit_*
