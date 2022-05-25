@@ -69,7 +69,7 @@ Role could be called from a playbook using varios switches (turning on and off f
 ### Variables description
 There are various switches that could be used to control role behavior
 
-`wgzeroize` will deleted public and private keys, wg.conf file. Use wisely to configure wireguard from the scratch. Will be executed before configuration code
+`wgzeroize` will delete public and private keys, wg.conf file. Use wisely to configure wireguard from the scratch. Will be executed before configuration code
 
 `wgconfigure` main code that generates wireguard keys (if needed) and wg.conf content
 
@@ -101,11 +101,11 @@ Client
 iperf -c 10.10.10.1 -t 30
 ```
 
-### Unencrypted performance clent <-> server
+### Unencrypted performance client <-> server
 Client <-> Server: 14 Gbits/sec
 
 ### Wireguard encrypted performance
-Clent <-> Server:            2 Gbits/sec
+Client <-> Server:            2 Gbits/sec
 
 Client <-> Client:       900 Mbits/sec
 
